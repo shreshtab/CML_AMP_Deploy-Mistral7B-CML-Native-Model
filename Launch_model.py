@@ -5,8 +5,11 @@ import time
 import torch
 import cml.metrics_v1 as metrics
 import cml.models_v1 as models
+import logging
 
 hf_access_token = os.environ.get('HF_ACCESS_TOKEN')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Quantization
 # Here quantization is setup to use "Normal Float 4" data type for weights. 
@@ -22,12 +25,14 @@ bnb_config = BitsAndBytesConfig(
 # Create a model object with above parameters
 model_name = "mistralai/Mistral-7B-Instruct-v0.2"
 
+logger.info("Creating a model object")
 model = AutoModelForCausalLM.from_pretrained(
     model_name, 
     quantization_config=bnb_config,
     device_map='auto',
     token=hf_access_token
 )
+logger.info("model object created successfully")
 
 # Args helper
 def opt_args_value(args, arg_name, default):
@@ -70,9 +75,12 @@ def generate(prompt, max_new_tokens=50, temperature=0, repetition_penalty=1.0, n
   output=tokenizer.decode(output_tokens[0], skip_special_tokens=True)
   
   # Log the response along with parameters
-  print("Prompt: %s" % (prompt))
-  print("max_new_tokens: %s; temperature: %s; repetition_penalty: %s; num_beams: %s; top_p: %s; top_k: %s" % (max_new_tokens, temperature, repetition_penalty, num_beams, top_p, top_k))
-  print("Full Response: %s" % (output))
+  logger.info("Prompt: %s", prompt)
+  logger.info("max_new_tokens: %s; temperature: %s; repetition_penalty: %s; num_beams: %s; top_p: %s; top_k: %s", max_new_tokens, temperature, repetition_penalty, num_beams, top_p, top_k)
+  logger.info("Full Response: %s", output)
+  # print("Prompt: %s" % (prompt))
+  # print("max_new_tokens: %s; temperature: %s; repetition_penalty: %s; num_beams: %s; top_p: %s; top_k: %s" % (max_new_tokens, temperature, repetition_penalty, num_beams, top_p, top_k))
+  # print("Full Response: %s" % (output))
   
   return output
 
@@ -85,6 +93,7 @@ def api_wrapper(args):
   
   # Pick up args from model api
   prompt = args["prompt"]
+  logger.info("Prompt picked up: %s", prompt)
   
   # Pick up or set defaults for inference options
   # TODO: More intelligent control of max_new_tokens
@@ -95,7 +104,7 @@ def api_wrapper(args):
   repetition_penalty = float(opt_args_value(args, "repetition_penalty", 1.0))
   num_beams = int(opt_args_value(args, "num_beams", 1))
   
-  
+  logger.info("Starting generate response")
   # Generate response from the LLM
   response = generate(prompt, max_new_tokens, temperature, repetition_penalty, num_beams, top_p, top_k)
   
