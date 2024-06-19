@@ -28,7 +28,7 @@ tasks:
       gpu: 1
     default_replication_policy:
       type: fixed
-      num_replicas: 1
+      num_replicas: 2
   
   - type: build_model
     name: Build Mistral 7B model
